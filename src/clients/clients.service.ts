@@ -1,9 +1,12 @@
-import { Get, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 
 @Injectable()
 export class ClientsService {
-    @Get('get-clients')
-    async getClients(): Promise<any> {
-        return 'Chegou aqui!';
+    constructor() {
+        console.log('Chegou aqui no constructor Service!');
+    }
+
+    async getClients(): Promise<string> {
+        return 'Chegou aqui no Service!';
     }
 }
