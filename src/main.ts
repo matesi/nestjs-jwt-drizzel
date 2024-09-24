@@ -4,7 +4,7 @@ import { fastify } from "fastify";
 
 async function bootstrap() {
   const app = fastify({logger: true});
-  const whitelist = [/.*localhost:3000/g, /.*127.0.0.1:3000/g, /.*0.0.0.0:3000/g, /.*localhost:3335/g];
+  const whitelist = /.*(localhost|127.0.0.1|0.0.0.0):(3000|3335)/g;
 
   app.register(cors, {
     hook: 'preHandler',
@@ -15,13 +15,14 @@ async function bootstrap() {
       const originHost = request.headers.host;
 
       // do not include CORS headers for requests from variable whiteList
-      if(!whitelist.find((regex) => regex.test(originHost))) {
+      if(!whitelist.test(originHost)) {
         corsOptions.origin = false;
+
+        // callback expects two parameters: error and cors options
         return callback(new HttpException('Forbidden', HttpStatus.FORBIDDEN), corsOptions);
         
       }
   
-      // callback expects two parameters: error and options
       callback(null, corsOptions);
     },
   });
