@@ -1,26 +1,29 @@
 import cors from "@fastify/cors";
+import { HttpException, HttpStatus } from "@nestjs/common";
 import { fastify } from "fastify";
-import { STATUS_CODES } from "http";
-import * as request from 'supertest';
 
 async function bootstrap() {
   const app = fastify({logger: true});
-  const whitelist = [/\.localhost\.3000$/, /\.127.0.0.1\.3000$/];
-  app.register(cors, (instance) => {
-      return (req, callback) => {
-        const corsOptions = {
-          // This is NOT recommended for production as it enables reflection exploits
-          origin: true
-        };
-        // console.log( '=====> req: ',req.raw.rawHeaders[1]);
-        // do not include CORS headers for requests from localhost
-        if (whitelist.find((regex) => regex.test(req.raw.rawHeaders[1]))) {
-          corsOptions.origin = false
-        }
-    
-        // callback expects two parameters: error and options
-        callback(null, corsOptions)
+  const whitelist = [/.*localhost:3000/g, /.*127.0.0.1:3000/g, /.*0.0.0.0:3000/g, /.*localhost:3335/g];
+
+  app.register(cors, {
+    hook: 'preHandler',
+    delegator: (request, callback) => {
+      let corsOptions = {
+        origin: true,
+      };
+      const originHost = request.headers.host;
+
+      // do not include CORS headers for requests from variable whiteList
+      if(!whitelist.find((regex) => regex.test(originHost))) {
+        corsOptions.origin = false;
+        return callback(new HttpException('Forbidden', HttpStatus.FORBIDDEN), corsOptions);
+        
       }
+  
+      // callback expects two parameters: error and options
+      callback(null, corsOptions);
+    },
   });
 
   app.get('/', (req, reply) => {
